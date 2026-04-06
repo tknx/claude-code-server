@@ -1,6 +1,6 @@
 services:
   claude-code:
-    build: .
+    image: ghcr.io/tknx/claude-code-server:latest
     container_name: claude-code
     hostname: claude-code
     restart: unless-stopped
