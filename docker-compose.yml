@@ -24,9 +24,6 @@ services:
       # SSH: put your authorized_keys here so you can SSH into the container
       - /mnt/user/appdata/claude-code/ssh/authorized_keys:/root/.ssh/authorized_keys:ro
 
-      # SSH host keys: persist so clients don't get "host key changed" warnings
-      - /mnt/user/appdata/claude-code/ssh/host-keys:/etc/ssh
-
       # rclone config: for syncing from Whatbox or other remotes
       - /mnt/user/appdata/claude-code/rclone.conf:/root/.config/rclone/rclone.conf:ro
 
