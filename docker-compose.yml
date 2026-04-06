@@ -1,0 +1,61 @@
+services:
+  claude-code:
+    build: .
+    container_name: claude-code
+    hostname: claude-code
+    restart: unless-stopped
+
+    # ── Ports ──────────────────────────────────────────────────────────────────
+    ports:
+      - "2222:22"           # SSH — access via: ssh -p 2222 root@10.0.0.101
+                            # or via Tailscale: ssh -p 2222 root@tower
+
+    # ── Environment ────────────────────────────────────────────────────────────
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}   # fallback; auth.json takes priority
+      - TERM=xterm-256color
+
+    # ── Volumes ────────────────────────────────────────────────────────────────
+    volumes:
+      # Auth: copy from your Mac: ~/.config/claude/credentials.json (or auth.json)
+      # Required for remote-control (needs Pro/Max account, not just API key)
+      - /mnt/user/appdata/claude-code/auth.json:/root/.config/claude/credentials.json:ro
+
+      # SSH: put your authorized_keys here so you can SSH into the container
+      - /mnt/user/appdata/claude-code/ssh/authorized_keys:/root/.ssh/authorized_keys:ro
+
+      # SSH host keys: persist so clients don't get "host key changed" warnings
+      - /mnt/user/appdata/claude-code/ssh/host-keys:/etc/ssh
+
+      # rclone config: for syncing from Whatbox or other remotes
+      - /mnt/user/appdata/claude-code/rclone.conf:/root/.config/rclone/rclone.conf:ro
+
+      # Projects: full access to all projects on Tower
+      # Loxone files live at /mnt/user/projects/loxone
+      - /mnt/user/projects:/mnt/user/projects
+
+      # Appdata: so Claude can inspect and edit container configs across the stack
+      - /mnt/user/appdata:/mnt/user/appdata
+
+      # Claude settings/memory: persists CLAUDE.md, settings, etc.
+      # Kept as a dedicated mount so it doesn't get buried under the appdata tree
+      - /mnt/user/appdata/claude-code/claude-config:/root/.claude
+
+    # ── SSH Client Config for known hosts ─────────────────────────────────────
+    # Lets Claude SSH to DietPi, Tower, etc. without interactive host-key prompts
+    # Pre-populate /mnt/user/appdata/claude-code/ssh/known_hosts with your hosts
+    # and mount it here:
+    # - /mnt/user/appdata/claude-code/ssh/known_hosts:/root/.ssh/known_hosts:ro
+
+    # ── Resource Limits ────────────────────────────────────────────────────────
+    # Claude Code + Node can be memory hungry during long sessions
+    mem_limit: 2g
+    memswap_limit: 2g
+
+    # ── Network ────────────────────────────────────────────────────────────────
+    # Default bridge is fine — Tower's Tailscale subnet routing means the
+    # container is reachable from all your devices via Tower's IP.
+    # If you need the container to reach VLAN-isolated devices (e.g. Loxone
+    # Miniservers on VLAN 20) directly, switch to host networking:
+    #
+    # network_mode: "host"   # and remove the ports: section above
